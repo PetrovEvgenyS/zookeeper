@@ -43,14 +43,14 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-# Установка зависимостей
+# --- Установка зависимостей ---
 installing_dependencies() {
   magentaprint "Установка необходимых зависимостей..."
   dnf install -y java-11-openjdk wget tar
 }
 
 
-# Создание пользователя и группы для ZooKeeper
+# --- Создание пользователя и группы для ZooKeeper ---
 creating_user_group() {
   magentaprint "Создание пользователя и группы для ZooKeeper..."
   groupadd -r $ZOOKEEPER_GROUP
@@ -58,7 +58,7 @@ creating_user_group() {
 }
 
 
-# Скачивание и распаковка ZooKeeper
+# --- Скачивание и распаковка ZooKeeper ---
 downloading_unpacking_zookeeper() {
   echo $(magentaprint "Скачивание и установка ZooKeeper версии $ZOOKEEPER_VERSION ...")
   wget $ZOOKEEPER_DOWNLOAD_URL -O /tmp/zookeeper.tar.gz
@@ -68,12 +68,12 @@ downloading_unpacking_zookeeper() {
 }
 
 
+# --- Настройка конфигурации ZooKeeper ---
 creating_configuration_zookeeper() {
-  # Настройка конфигурации ZooKeeper
-  magentaprint "Настройка конфигурации ZooKeeper..."
-  mkdir -p $DATA_DIR $ZOOKEEPER_LOG 
-  
-  # Создание основного конфигурационного файла ZooKeeper
+  magentaprint "Настройка конфигурации ZooKeeper $CONFIG_DIR"
+  mkdir -p $DATA_DIR $ZOOKEEPER_LOG
+    
+  # --- Создание основного конфигурационного файла ZooKeeper ---
 cat <<EOF > $CONFIG_DIR/zoo.cfg
 # Базовый временной интервал (в миллисекундах), который ZooKeeper использует для heartbeat-сообщений и таймаутов.
 # Например, initLimit и syncLimit умножаются на tickTime для определения реальных таймаутов.
@@ -115,16 +115,16 @@ server.3=10.100.10.3:2888:3888
 
 EOF
 
-  # Создание файла myid для идентификации сервера в кластере.
+  # --- Создание файла myid для идентификации сервера в кластере. ---
   echo "$ID" > $DATA_DIR/myid
   chown -R $ZOOKEEPER_USER:$ZOOKEEPER_GROUP $DATA_DIR $INSTALL_DIR $ZOOKEEPER_LOG
   chmod 0700 $DATA_DIR $INSTALL_DIR $ZOOKEEPER_LOG
 }
 
 
-# Настройка сервиса Systemd для ZooKeeper
+# --- Настройка сервиса Systemd для ZooKeeper ---
 create_unit_zookeeper() {
-magentaprint "Создание и настройка службы ZooKeeper в Systemd..."
+magentaprint "Создание и настройка службы ZooKeeper в Systemd $SERVICE_FILE"
 cat <<EOF > $SERVICE_FILE
 [Unit]
 Description=Apache ZooKeeper $ZOOKEEPER_VERSION Service
@@ -135,8 +135,8 @@ After=network.target
 Type=simple
 User=$ZOOKEEPER_USER
 Group=$ZOOKEEPER_GROUP
-Environment="ZOOKEEPER_HOME=/opt/zookeeper"
-Environment="ZOOKEEPER_CONF=/opt/zookeeper/conf"
+Environment="ZOOKEEPER_HOME=$INSTALL_DIR"
+Environment="ZOOKEEPER_CONF=$CONFIG_DIR"
 ExecStart=$INSTALL_DIR/bin/zkServer.sh start-foreground
 ExecStop=$INSTALL_DIR/bin/zkServer.sh stop
 ExecReload=$INSTALL_DIR/bin/zkServer.sh restart
@@ -156,7 +156,7 @@ EOF
 }
 
 
-# Перезагрузка Systemd и запуск ZooKeeper как сервиса
+# --- Перезагрузка Systemd и запуск ZooKeeper как сервиса ---
 start_enable_zookeeper() {
   magentaprint "Перезагрузка Systemd и запуск ZooKeeper как сервиса..."
   systemctl daemon-reload
@@ -165,7 +165,7 @@ start_enable_zookeeper() {
 }
 
 
-# Функция проверки состояния ZooKeeper:
+# --- Функция проверки состояния ZooKeeper ---
 check_status_zookeeper() {
   magentaprint "Проверка статуса службы ZooKeeper..."
   systemctl status zookeeper --no-pager
@@ -173,7 +173,7 @@ check_status_zookeeper() {
 }
 
 
-# Создание функций main.
+# --- Создание функций main ---
 main() {
   installing_dependencies
   creating_user_group
@@ -184,5 +184,5 @@ main() {
   check_status_zookeeper
 }
 
-# Вызов функции main.
+# --- Вызов функции main ---
 main
