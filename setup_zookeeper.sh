@@ -10,7 +10,8 @@ ZOOKEEPER_LOG="/var/log/zookeeper"                    # Директории л�
 INSTALL_DIR="/opt/zookeeper"                          # Директории установки ZooKeeper
 DATA_DIR="/var/lib/zookeeper"                         # Директории данных ZooKeeper
 CONFIG_DIR="${INSTALL_DIR}/conf"                      # Директория конфигурации ZooKeeper
-SERVICE_FILE="/etc/systemd/system/zookeeper.service"  # Фййл службы Systemd
+ZOOKEEPER_CONF="${CONFIG_DIR}/zoo.cfg"                # Конфигурационный файл ZooKeeper
+SERVICE_FILE="/etc/systemd/system/zookeeper.service"  # Файл службы Systemd
 ID="$1"                 # ID сервера в кластере. ВАЖНО! Поменяй значение 1 на 2 или 3.
 
 
@@ -70,11 +71,11 @@ downloading_unpacking_zookeeper() {
 
 # --- Настройка конфигурации ZooKeeper ---
 creating_configuration_zookeeper() {
-  magentaprint "Настройка конфигурации ZooKeeper $CONFIG_DIR"
+  magentaprint "Настройка конфигурации ZooKeeper $ZOOKEEPER_CONF"
   mkdir -p $DATA_DIR $ZOOKEEPER_LOG
     
   # --- Создание основного конфигурационного файла ZooKeeper ---
-cat <<EOF > $CONFIG_DIR/zoo.cfg
+cat <<EOF > $ZOOKEEPER_CONF
 # Базовый временной интервал (в миллисекундах), который ZooKeeper использует для heartbeat-сообщений и таймаутов.
 # Например, initLimit и syncLimit умножаются на tickTime для определения реальных таймаутов.
 # 2000 мс = 2 секунды – стандартное значение.
@@ -137,6 +138,7 @@ User=$ZOOKEEPER_USER
 Group=$ZOOKEEPER_GROUP
 Environment="ZOOKEEPER_HOME=$INSTALL_DIR"
 Environment="ZOOKEEPER_CONF=$CONFIG_DIR"
+WorkingDirectory=$INSTALL_DIR
 ExecStart=$INSTALL_DIR/bin/zkServer.sh start-foreground
 ExecStop=$INSTALL_DIR/bin/zkServer.sh stop
 ExecReload=$INSTALL_DIR/bin/zkServer.sh restart
